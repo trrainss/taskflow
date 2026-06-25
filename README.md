@@ -77,7 +77,7 @@
 Приложение доступно по ссылке:  
 **[https://taskflow-fbgg3omby-trrains.vercel.app](https://taskflow-fbgg3omby-trrains.vercel.app)**
 
-> *Замени на свою ссылку после деплоя на Vercel*
+
 
 ---
 
@@ -85,5 +85,5 @@
 
 ### 1. Клонировать репозиторий
 ```bash
-git clone https://github.com/твой-аккаунт/taskflow.git
+git clone https://github.com/trrainss/taskflow.git
 cd taskflow
