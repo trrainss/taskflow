@@ -1,4 +1,4 @@
-import type { BoardMember, TaskFilters } from '@/types';
+import type { TaskFilters, BoardMember } from '@/types';
 
 interface TaskFiltersBarProps {
   filters: TaskFilters;
@@ -8,20 +8,21 @@ interface TaskFiltersBarProps {
 
 export function TaskFiltersBar({ filters, members, onChange }: TaskFiltersBarProps) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap gap-2">
       <input
+        type="text"
+        placeholder="Поиск..."
         value={filters.search}
         onChange={(e) => onChange({ ...filters, search: e.target.value })}
-        placeholder="Поиск задач..."
-        className="w-48 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+        className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-white"
       />
 
       <select
         value={filters.priority}
         onChange={(e) => onChange({ ...filters, priority: e.target.value as TaskFilters['priority'] })}
-        className="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+        className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-white"
       >
-        <option value="all">Любой приоритет</option>
+        <option value="all">Все приоритеты</option>
         <option value="low">Низкий</option>
         <option value="medium">Средний</option>
         <option value="high">Высокий</option>
@@ -30,14 +31,18 @@ export function TaskFiltersBar({ filters, members, onChange }: TaskFiltersBarPro
       <select
         value={filters.assigneeId}
         onChange={(e) => onChange({ ...filters, assigneeId: e.target.value })}
-        className="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+        className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-white"
       >
-        <option value="all">Любой исполнитель</option>
-        {members.map((member) => (
-          <option key={member.user_id} value={member.user_id}>
-            {member.profile?.display_name}
-          </option>
-        ))}
+        <option value="all">Все исполнители</option>
+        {members.map((member) => {
+          const profile = member.profile;
+          const name = profile?.display_name || profile?.name || 'User';
+          return (
+            <option key={member.id} value={member.user_id}>
+              {name}
+            </option>
+          );
+        })}
       </select>
     </div>
   );

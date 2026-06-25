@@ -1,31 +1,37 @@
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from './supabaseClient';
 import type { Comment } from '@/types';
 
-export async function getComments(taskId: string): Promise<Comment[]> {
-  const { data, error } = await supabase
-    .from('comments')
-    .select('*')
-    .eq('task_id', taskId)
-    .order('created_at', { ascending: true });
-  if (error) throw error;
-  return data;
-}
+export const commentService = {
+  async getComments(taskId: string): Promise<Comment[]> {
+    const { data, error } = await supabase
+      .from('comments')
+      .select('*')
+      .eq('task_id', taskId)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  },
 
-export async function addComment(
-  taskId: string,
-  authorId: string,
-  body: string,
-): Promise<Comment> {
-  const { data, error } = await supabase
-    .from('comments')
-    .insert({ task_id: taskId, author_id: authorId, body })
-    .select('*')
-    .single();
-  if (error) throw error;
-  return data;
-}
+  async addComment(taskId: string, userId: string, content: string): Promise<Comment> {
+    const { data, error } = await supabase
+      .from('comments')
+      .insert({ task_id: taskId, user_id: userId, content })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
 
-export async function deleteComment(commentId: string): Promise<void> {
-  const { error } = await supabase.from('comments').delete().eq('id', commentId);
-  if (error) throw error;
-}
+  async deleteComment(commentId: string): Promise<void> {
+    const { error } = await supabase
+      .from('comments')
+      .delete()
+      .eq('id', commentId);
+    if (error) throw error;
+  },
+};
+
+// 👇 ЭКСПОРТЫ ДЛЯ ОТДЕЛЬНЫХ ФУНКЦИЙ
+export const getComments = commentService.getComments;
+export const addComment = commentService.addComment;
+export const deleteComment = commentService.deleteComment;

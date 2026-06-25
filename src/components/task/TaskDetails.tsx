@@ -1,129 +1,132 @@
-import { useEffect, useState } from 'react';
-import type { BoardMember, Priority, Task } from '@/types';
+import { useState } from 'react';
+import type { Task, BoardMember } from '@/types';
 import type { TaskUpdatePayload } from '@/services/taskService';
+
 import { Button } from '@/components/shared/Button';
-import { TextField } from '@/components/shared/TextField';
-import { notifyError, notifySuccess } from '@/utils/toast';
+import { PRIORITIES } from '@/utils/constants';
+import { CommentList } from './CommentList';
 
 interface TaskDetailsProps {
   task: Task;
   members: BoardMember[];
-  onUpdate: (updates: TaskUpdatePayload) => Promise<unknown>;
-  onDelete: () => Promise<unknown>;
+  onUpdate: (taskId: string, updates: TaskUpdatePayload) => Promise<void>;
+  onClose: () => void;
 }
 
-export function TaskDetails({ task, members, onUpdate, onDelete }: TaskDetailsProps) {
+export function TaskDetails({ task, members, onUpdate, onClose }: TaskDetailsProps) {
   const [title, setTitle] = useState(task.title);
-  const [description, setDescription] = useState(task.description ?? '');
-  const [priority, setPriority] = useState<Priority>(task.priority);
-  const [dueDate, setDueDate] = useState(task.due_date ?? '');
-  const [assigneeId, setAssigneeId] = useState(task.assignee_id ?? '');
-  const [isSaving, setIsSaving] = useState(false);
+  const [description, setDescription] = useState(task.description || '');
+  const [priority, setPriority] = useState(task.priority || 'medium');
+  const [dueDate, setDueDate] = useState(task.due_date || '');
+  const [assigneeId, setAssigneeId] = useState<string | null>(task.assignee_id || null);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    setTitle(task.title);
-    setDescription(task.description ?? '');
-    setPriority(task.priority);
-    setDueDate(task.due_date ?? '');
-    setAssigneeId(task.assignee_id ?? '');
-  }, [task]);
-
-  async function handleSave() {
-    setIsSaving(true);
+  const handleSubmit = async () => {
+    if (!title.trim()) return;
+    setLoading(true);
     try {
-      await onUpdate({
+      await onUpdate(task.id, {
         title: title.trim(),
-        description: description.trim() || null,
+        description: description.trim() || undefined,
         priority,
-        due_date: dueDate || null,
-        assignee_id: assigneeId || null,
+        due_date: dueDate || undefined,
+        assignee_id: assigneeId,
       });
-      notifySuccess('Изменения сохранены');
     } catch (error) {
-      notifyError(error, 'Не удалось сохранить изменения');
+      // error handled in parent
     } finally {
-      setIsSaving(false);
+      setLoading(false);
     }
-  }
-
-  async function handleDelete() {
-    if (!confirm('Удалить задачу?')) return;
-    try {
-      await onDelete();
-    } catch (error) {
-      notifyError(error, 'Не удалось удалить задачу');
-    }
-  }
+  };
 
   return (
-    <div className="flex flex-col gap-4">
-      <TextField
-        label="Название"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+          Название
+        </label>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+        />
+      </div>
 
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+      <div>
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
           Описание
         </label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-            Приоритет
-          </label>
-          <select
-            value={priority}
-            onChange={(e) => setPriority(e.target.value as Priority)}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-white"
-          >
-            <option value="low">Низкий</option>
-            <option value="medium">Средний</option>
-            <option value="high">Высокий</option>
-          </select>
-        </div>
-
-        <TextField
-          type="date"
-          label="Дедлайн"
-          value={dueDate ? dueDate.slice(0, 10) : ''}
-          onChange={(e) => setDueDate(e.target.value)}
-        />
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-          Исполнитель
+      <div>
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+          Приоритет
         </label>
         <select
-          value={assigneeId}
-          onChange={(e) => setAssigneeId(e.target.value)}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+          value={priority}
+          onChange={(e) => setPriority(e.target.value as 'low' | 'medium' | 'high')}
+          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
         >
-          <option value="">Не назначен</option>
-          {members.map((member) => (
-            <option key={member.user_id} value={member.user_id}>
-              {member.profile?.display_name}
+          {PRIORITIES.map((p) => (
+            <option key={p.value} value={p.value}>
+              {p.label}
             </option>
           ))}
         </select>
       </div>
 
-      <div className="flex justify-between pt-2">
-        <Button variant="danger" onClick={handleDelete}>
-          Удалить задачу
+      <div>
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+          Дедлайн
+        </label>
+        <input
+          type="date"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+          Исполнитель
+        </label>
+        <select
+          value={assigneeId || ''}
+          onChange={(e) => setAssigneeId(e.target.value || null)}
+          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+        >
+          <option value="">Не назначен</option>
+          {members.map((member) => {
+            const profile = member.profile;
+            const name = profile?.display_name || profile?.name || 'User';
+            return (
+              <option key={member.id} value={member.user_id}>
+                {name}
+              </option>
+            );
+          })}
+        </select>
+      </div>
+
+      <div className="flex justify-end gap-2 pt-4">
+        <Button type="button" variant="ghost" onClick={onClose}>
+          Закрыть
         </Button>
-        <Button onClick={handleSave} isLoading={isSaving}>
-          Сохранить
+        <Button type="button" onClick={handleSubmit} disabled={loading}>
+          {loading ? 'Сохранение...' : 'Сохранить'}
         </Button>
+      </div>
+
+      <div className="border-t border-slate-200 pt-4 dark:border-slate-700">
+        <CommentList taskId={task.id} />
       </div>
     </div>
   );

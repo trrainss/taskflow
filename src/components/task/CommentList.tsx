@@ -1,12 +1,10 @@
-import { useState, type FormEvent } from 'react';
-import { format } from 'date-fns';
-import { useComments } from '@/hooks/useComments';
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useProfiles } from '@/hooks/useProfiles';
+import { useComments } from '@/hooks/useComments';
 import { Avatar } from '@/components/shared/Avatar';
 import { Button } from '@/components/shared/Button';
-import { Spinner } from '@/components/shared/Spinner';
-import { notifyError } from '@/utils/toast';
+import { formatDate } from '@/utils/helpers';
+import toast from 'react-hot-toast';
 
 interface CommentListProps {
   taskId: string;
@@ -14,82 +12,105 @@ interface CommentListProps {
 
 export function CommentList({ taskId }: CommentListProps) {
   const { user } = useAuth();
-  const { comments, isLoading, addComment, isAdding, deleteComment } = useComments(taskId);
-  const [body, setBody] = useState('');
+  const { comments, isLoading, addComment, deleteComment } = useComments(taskId);
+  const [content, setContent] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const authorIds = comments.map((c) => c.author_id);
-  const { profilesById } = useProfiles(authorIds);
-
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    if (!body.trim() || !user) return;
-    try {
-      await addComment({ authorId: user.id, body: body.trim() });
-      setBody('');
-    } catch (error) {
-      notifyError(error, 'Не удалось добавить комментарий');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!content.trim()) {
+      toast.error('Введите комментарий');
+      return;
     }
-  }
+    if (!user) return;
 
-  async function handleDelete(commentId: string) {
+    setLoading(true);
+    try {
+      await addComment({ userId: user.id, content: content.trim() });
+      setContent('');
+      toast.success('Комментарий добавлен');
+    } catch (error) {
+      toast.error('Не удалось добавить комментарий');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (commentId: string) => {
+    if (!confirm('Удалить комментарий?')) return;
     try {
       await deleteComment(commentId);
+      toast.success('Комментарий удалён');
     } catch (error) {
-      notifyError(error, 'Не удалось удалить комментарий');
+      toast.error('Не удалось удалить комментарий');
     }
+  };
+
+  if (isLoading) {
+    return <div className="text-sm text-slate-500">Загрузка комментариев...</div>;
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Комментарии</h3>
-
-      {isLoading ? (
-        <Spinner size="sm" />
-      ) : comments.length === 0 ? (
-        <p className="text-sm text-slate-400">Пока нет комментариев</p>
-      ) : (
-        <div className="flex max-h-60 flex-col gap-3 overflow-y-auto">
-          {comments.map((comment) => {
-            const author = profilesById.get(comment.author_id);
-            return (
-              <div key={comment.id} className="flex gap-2">
-                <Avatar name={author?.display_name ?? '?'} avatarUrl={author?.avatar_url} size="xs" />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
-                      {author?.display_name ?? 'Пользователь'}
-                    </span>
-                    <span className="text-xs text-slate-400">
-                      {format(new Date(comment.created_at), 'd MMM, HH:mm')}
-                    </span>
-                  </div>
-                  <p className="text-sm text-slate-600 dark:text-slate-300">{comment.body}</p>
-                </div>
-                {comment.author_id === user?.id && (
-                  <button
-                    onClick={() => handleDelete(comment.id)}
-                    className="self-start text-xs text-slate-400 hover:text-rose-500"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300">
+        Комментарии ({comments.length})
+      </h4>
 
       <form onSubmit={handleSubmit} className="flex gap-2">
         <input
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
+          type="text"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
           placeholder="Написать комментарий..."
-          className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+          className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+          disabled={loading}
         />
-        <Button type="submit" isLoading={isAdding}>
-          Отправить
+        <Button type="submit" size="sm" disabled={loading}>
+          {loading ? '...' : 'Отправить'}
         </Button>
       </form>
+
+      <div className="space-y-3">
+        {comments.length === 0 ? (
+          <p className="text-sm text-slate-500">Нет комментариев</p>
+        ) : (
+          comments.map((comment) => {
+            const isOwner = comment.user_id === user?.id;
+            return (
+              <div
+                key={comment.id}
+                className="flex gap-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-800"
+              >
+                <Avatar
+                  name={comment.user_id || 'User'}
+                  size="sm"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-slate-900 dark:text-white">
+                      {comment.user_id}
+                    </p>
+                    <span className="text-xs text-slate-500">
+                      {formatDate(comment.created_at)}
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-700 dark:text-slate-300">
+                    {comment.content}
+                  </p>
+                  {isOwner && (
+                    <button
+                      onClick={() => handleDelete(comment.id)}
+                      className="mt-1 text-xs text-red-500 hover:text-red-700"
+                    >
+                      Удалить
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }

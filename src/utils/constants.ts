@@ -1,17 +1,13 @@
 import type { Priority } from '@/types';
 
-export const DEFAULT_COLUMNS = ['To Do', 'In Progress', 'Done'] as const;
-
-export const PRIORITY_LABELS: Record<Priority, string> = {
-  low: 'Низкий',
-  medium: 'Средний',
-  high: 'Высокий',
-};
+export const PRIORITIES: { value: Priority; label: string }[] = [
+  { value: 'low', label: 'Низкий' },
+  { value: 'medium', label: 'Средний' },
+  { value: 'high', label: 'Высокий' },
+];
 
 export const PRIORITY_COLORS: Record<Priority, string> = {
-  low: 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
-  medium: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-200',
-  high: 'bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-200',
+  low: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+  medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+  high: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
 };
-
-export const AVATAR_BUCKET = 'avatars';
