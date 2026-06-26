@@ -75,7 +75,7 @@
 ## 🚀 Демо
 
 Приложение доступно по ссылке:  
-**[https://taskflow-fbgg3omby-trrains.vercel.app](https://taskflow-fbgg3omby-trrains.vercel.app)**
+**[https://taskflow-trrains.vercel.app/login](https://taskflow-trrains.vercel.app/login)**
 
 
 
