@@ -17,15 +17,28 @@ export function DashboardPage() {
 
   useEffect(() => {
     async function loadBoards() {
-      if (!user) return;
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+      
       setIsLoading(true);
 
       try {
-        // Получаем ID досок, где пользователь участник
-        const { data: members } = await supabase
+        console.log('🔍 Загружаем доски для user.id:', user.id);
+        
+        // 1. Получаем ID досок, где пользователь участник
+        const { data: members, error: membersError } = await supabase
           .from('board_members')
           .select('board_id')
           .eq('user_id', user.id);
+
+        if (membersError) {
+          console.error('❌ Ошибка загрузки участников:', membersError);
+          throw membersError;
+        }
+        
+        console.log('📋 Найдено участников:', members?.length || 0);
 
         if (!members || members.length === 0) {
           setBoards([]);
@@ -33,17 +46,24 @@ export function DashboardPage() {
           return;
         }
 
-        const boardIds = members.map((m: any) => m.board_id);
+        const boardIds = members.map((m: { board_id: string }) => m.board_id);
+        console.log('📋 ID досок:', boardIds);
 
-        // Получаем сами доски
-        const { data } = await supabase
+        // 2. Получаем сами доски
+        const { data: boardsData, error: boardsError } = await supabase
           .from('boards')
           .select('*')
           .in('id', boardIds);
 
-        setBoards(data || []);
+        if (boardsError) {
+          console.error('❌ Ошибка загрузки досок:', boardsError);
+          throw boardsError;
+        }
+        
+        console.log('📋 Загружено досок:', boardsData?.length || 0);
+        setBoards(boardsData || []);
       } catch (error) {
-        console.error('Ошибка:', error);
+        console.error('❌ Ошибка:', error);
         toast.error('Не удалось загрузить доски');
       } finally {
         setIsLoading(false);
@@ -117,8 +137,12 @@ export function DashboardPage() {
       <main className="flex-1 p-6">
         <div className="mx-auto max-w-4xl">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold">Мои доски ({boards.length})</h1>
-            <Button onClick={() => setIsCreating(true)}>Создать доску</Button>
+            <h1 className="text-2xl font-bold">
+              Мои доски ({boards.length})
+            </h1>
+            <Button onClick={() => setIsCreating(true)}>
+              Создать доску
+            </Button>
           </div>
 
           {isCreating && (
@@ -132,30 +156,42 @@ export function DashboardPage() {
                 autoFocus
               />
               <Button onClick={handleCreate}>Сохранить</Button>
-              <Button variant="ghost" onClick={() => { setIsCreating(false); setName(''); }}>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setIsCreating(false);
+                  setName('');
+                }}
+              >
                 Отмена
               </Button>
             </div>
           )}
 
           {boards.length === 0 ? (
-            <p className="text-center text-slate-500">У вас пока нет досок.</p>
+            <div className="text-center py-12">
+              <p className="text-slate-500 dark:text-slate-400">
+                У вас пока нет досок. Создайте первую!
+              </p>
+            </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {boards.map((board) => (
+              {boards.map((board: Board) => (
                 <div
                   key={board.id}
                   className="group relative rounded-xl bg-white p-4 shadow-sm hover:shadow-md dark:bg-slate-800"
                 >
                   <Link to={`/board/${board.id}`} className="block">
-                    <h3 className="font-medium">{board.name}</h3>
-                    <p className="text-sm text-slate-500">
-                      {new Date(board.created_at).toLocaleDateString()}
+                    <h3 className="font-medium text-slate-900 dark:text-white">
+                      {board.name}
+                    </h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      Создана: {new Date(board.created_at).toLocaleDateString()}
                     </p>
                   </Link>
                   <button
                     onClick={() => handleDelete(board.id)}
-                    className="absolute right-2 top-2 text-slate-400 opacity-0 group-hover:opacity-100 hover:text-red-500"
+                    className="absolute right-2 top-2 text-slate-400 opacity-0 transition group-hover:opacity-100 hover:text-red-500"
                   >
                     ✕
                   </button>
