@@ -17,57 +17,81 @@ export function useBoardMembers(boardId: string | undefined) {
         throw new Error('Введите email');
       }
 
-      // 1. Ищем пользователя в auth.users через админский доступ
-      // Используем прямой запрос к auth.users (только если есть service_role ключ)
-      const { data: users, error: userError } = await supabase
+      // 1. Ищем пользователя в auth.users через профиль
+      // В profiles.name при регистрации сохраняется email
+      const { data: profiles, error: profileError } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, name')
         .eq('name', email.trim());
 
-      if (userError) {
-        console.error('Ошибка поиска:', userError);
+      if (profileError) {
+        console.error('Ошибка поиска:', profileError);
         throw new Error('Ошибка поиска пользователя');
       }
 
-      // Если не нашли по email в profiles - пробуем найти по имени
-      if (!users || users.length === 0) {
+      // Если нашли в profiles
+      if (profiles && profiles.length > 0) {
+        const user = profiles[0];
+        
+        // Проверяем, не добавлен ли уже
+        const { data: existing, error: checkError } = await supabase
+          .from('board_members')
+          .select('id')
+          .eq('board_id', boardId)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (checkError) throw checkError;
+        if (existing) throw new Error('Пользователь уже является участником');
+
+        // Добавляем
+        const { data, error } = await supabase
+          .from('board_members')
+          .insert({ board_id: boardId, user_id: user.id, role: 'member' })
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      }
+
+      // 2. Если не нашли в profiles — пробуем через auth.users
+      // Используем RPC функцию (если создана)
+      try {
+        const { data: authUser, error: authError } = await supabase
+          .rpc('find_user_by_email', { user_email: email.trim() });
+
+        if (authError) throw authError;
+        if (!authUser || authUser.length === 0) {
+          throw new Error('Пользователь с таким email не найден. Убедитесь, что он зарегистрирован.');
+        }
+
+        const user = authUser[0];
+        
+        // Проверяем, не добавлен ли уже
+        const { data: existing, error: checkError } = await supabase
+          .from('board_members')
+          .select('id')
+          .eq('board_id', boardId)
+          .eq('user_id', user.user_id)
+          .maybeSingle();
+
+        if (checkError) throw checkError;
+        if (existing) throw new Error('Пользователь уже является участником');
+
+        // Добавляем
+        const { data, error } = await supabase
+          .from('board_members')
+          .insert({ board_id: boardId, user_id: user.user_id, role: 'member' })
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      } catch (authError) {
+        console.error('Ошибка поиска в auth:', authError);
         throw new Error('Пользователь с таким email не найден. Убедитесь, что он зарегистрирован.');
       }
-
-      const user = users[0];
-      
-      if (!user || !user.id) {
-        throw new Error('Не удалось определить ID пользователя');
-      }
-
-      // 2. Проверяем, не добавлен ли уже
-      const { data: existing, error: checkError } = await supabase
-        .from('board_members')
-        .select('id')
-        .eq('board_id', boardId)
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (checkError) {
-        console.error('Ошибка проверки участника:', checkError);
-        throw new Error('Ошибка проверки прав доступа');
-      }
-      
-      if (existing) throw new Error('Пользователь уже является участником');
-
-      // 3. Добавляем в board_members
-      const { data, error } = await supabase
-        .from('board_members')
-        .insert({ board_id: boardId, user_id: user.id, role: 'member' })
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Ошибка добавления участника:', error);
-        throw new Error('Не удалось добавить участника');
-      }
-      
-      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['boardMembers', boardId] });
