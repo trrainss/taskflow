@@ -44,6 +44,9 @@ export function DashboardPage() {
     );
   }
 
+console.log('🔍 boards в DashboardPage:', boards);
+console.log('🔍 isLoading:', isLoading);
+console.log('🔍 user?.id:', user?.id);
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-slate-900">
       <Header />
