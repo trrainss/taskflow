@@ -17,29 +17,24 @@ export function useBoardMembers(boardId: string | undefined) {
         throw new Error('Введите email');
       }
 
-      
+      // ✅ 1. Ищем ТОЛЬКО в profiles (существующие пользователи)
       const { data: profiles, error: profileError } = await supabase
         .from('profiles')
         .select('id, name')
         .eq('name', email.trim());
 
       if (profileError) {
-        console.error('Ошибка поиска:', profileError);
         throw new Error('Ошибка поиска пользователя');
       }
 
-    
+      // ✅ 2. Если не нашли — пользователь НЕ СУЩЕСТВУЕТ
       if (!profiles || profiles.length === 0) {
         throw new Error('Пользователь с таким email не найден. Убедитесь, что он зарегистрирован.');
       }
 
       const user = profiles[0];
 
-      if (!user || !user.id) {
-        throw new Error('Не удалось определить ID пользователя');
-      }
-
-   
+      // ✅ 3. Проверяем, не добавлен ли уже
       const { data: existing, error: checkError } = await supabase
         .from('board_members')
         .select('id')
@@ -48,7 +43,6 @@ export function useBoardMembers(boardId: string | undefined) {
         .maybeSingle();
 
       if (checkError) {
-        console.error('Ошибка проверки участника:', checkError);
         throw new Error('Ошибка проверки прав доступа');
       }
 
@@ -56,7 +50,7 @@ export function useBoardMembers(boardId: string | undefined) {
         throw new Error('Пользователь уже является участником');
       }
 
-      
+      // ✅ 4. Добавляем в board_members
       const { data, error } = await supabase
         .from('board_members')
         .insert({ board_id: boardId, user_id: user.id, role: 'member' })
@@ -64,7 +58,6 @@ export function useBoardMembers(boardId: string | undefined) {
         .single();
 
       if (error) {
-        console.error('Ошибка добавления участника:', error);
         throw new Error('Не удалось добавить участника');
       }
 
@@ -74,7 +67,6 @@ export function useBoardMembers(boardId: string | undefined) {
       queryClient.invalidateQueries({ queryKey: ['boardMembers', boardId] });
     },
     onError: (error: Error) => {
-      
       console.error('Ошибка приглашения:', error.message);
     },
   });
