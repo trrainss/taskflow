@@ -5,6 +5,7 @@
 export interface Board {
   id: string;
   name: string;           
+  owner_id: string;
   created_at: string;
 }
 
@@ -28,21 +29,21 @@ export interface Task {
   due_date?: string;
   assignee_id?: string | null;
   position: number;
-  created_by: string;
+  created_by: string;     
   created_at: string;
 }
 
 export interface Comment {
   id: string;
   task_id: string;
-  user_id: string;
+  user_id: string;        
   content: string;        
   created_at: string;
 }
 
 export interface Profile {
   id: string;
-  name: string;           
+  name: string;          
   avatar_url: string | null;
   updated_at: string;
 }

@@ -5,6 +5,7 @@ import { Button } from '@/components/shared/Button';
 import { Spinner } from '@/components/shared/Spinner';
 import { Avatar } from '@/components/shared/Avatar';
 import { supabase } from '@/services/supabaseClient';
+import type { Profile } from '@/types';
 import toast from 'react-hot-toast';
 
 export function ProfilePage() {
@@ -14,7 +15,6 @@ export function ProfilePage() {
   const [loading, setLoading] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
 
-  // Загрузка профиля
   async function loadProfile() {
     if (!user) return;
     
@@ -45,7 +45,6 @@ export function ProfilePage() {
     loadProfile();
   }, [user]);
 
-  // Обновление имени (без перезагрузки страницы!)
   async function handleUpdateName() {
     if (!name.trim()) {
       toast.error('Введите имя');
@@ -62,18 +61,16 @@ export function ProfilePage() {
       if (error) throw error;
       
       toast.success('Имя обновлено!');
-      
-      // 👇 Просто обновляем данные без перезагрузки
       await loadProfile();
       
-    } catch (error: any) {
-      toast.error(error.message || 'Не удалось обновить имя');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Не удалось обновить имя';
+      toast.error(message);
     } finally {
       setLoading(false);
     }
   }
 
-  // Обновление аватарки (без перезагрузки страницы!)
   async function handleAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -100,12 +97,11 @@ export function ProfilePage() {
 
       toast.success('Аватар обновлён!');
       setAvatarUrl(urlData.publicUrl);
-      
-      // 👇 Просто обновляем данные без перезагрузки
       await loadProfile();
       
-    } catch (error: any) {
-      toast.error(error.message || 'Не удалось загрузить аватар');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Не удалось загрузить аватар';
+      toast.error(message);
     } finally {
       setLoading(false);
     }

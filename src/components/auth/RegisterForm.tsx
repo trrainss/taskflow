@@ -44,9 +44,9 @@ export function RegisterForm() {
         toast.success('Проверьте почту для подтверждения!');
         navigate('/login');
       }
-    } catch (error: any) {
-      console.error('Ошибка регистрации:', error);
-      toast.error(error.message || 'Не удалось зарегистрироваться');
+    } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Не удалось зарегистрироваться';
+    toast.error(message);
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Navigate, useParams } from 'react-router-dom';
+import { Navigate, useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useColumns } from '@/hooks/useColumns';
@@ -61,6 +61,36 @@ export function BoardPage() {
   }, [tasks, filters]);
 
   if (!rawBoardId) return <Navigate to="/" replace />;
+
+  
+  if (boardQuery.error) {
+    return (
+      <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-slate-900">
+        <Header />
+        <div className="flex flex-1 flex-col items-center justify-center gap-4">
+          <p className="text-lg text-red-500">Ошибка загрузки доски</p>
+          <Link to="/" className="text-brand-500 hover:underline">
+            Вернуться на главную
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  
+  if (!boardQuery.isLoading && !boardQuery.data) {
+    return (
+      <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-slate-900">
+        <Header />
+        <div className="flex flex-1 flex-col items-center justify-center gap-4">
+          <p className="text-lg text-slate-600 dark:text-slate-400">Доска не найдена</p>
+          <Link to="/" className="text-brand-500 hover:underline">
+            Вернуться на главную
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   async function handleUpdateTask(taskId: string, updates: Partial<Task>) {
     try {
@@ -155,10 +185,11 @@ export function BoardPage() {
 
       <div className="flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-6 py-3 dark:border-slate-700 dark:bg-slate-800">
         <h1 className="truncate text-lg font-semibold text-slate-900 dark:text-white">
-          {boardQuery.data?.name ?? 'Загрузка...'}  {}
+          {boardQuery.data?.name ?? 'Загрузка...'}
         </h1>
         <div className="flex items-center gap-3">
           <TaskFiltersBar filters={filters} members={members} onChange={setFilters} />
+          {/* ✅ ПУНКТ 10: Кнопка "Участники" только для owner */}
           {canManage && (
             <Button variant="secondary" onClick={() => setIsMembersOpen(true)}>
               Участники
@@ -184,6 +215,7 @@ export function BoardPage() {
               onReorderTasks={handleReorderTasks}
               onTaskClick={setSelectedTask}
             />
+            {/* ✅ ПУНКТ 10: Добавление колонки только для owner */}
             {canManage && <AddColumnForm onAdd={handleAddColumn} />}
           </div>
         )}
@@ -197,7 +229,7 @@ export function BoardPage() {
         onDelete={handleDeleteTask}
       />
 
-      {user && (
+      {user && canManage && (
         <BoardMembersModal
           isOpen={isMembersOpen}
           onClose={() => setIsMembersOpen(false)}
