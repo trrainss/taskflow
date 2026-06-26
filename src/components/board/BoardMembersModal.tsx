@@ -37,25 +37,26 @@ export function BoardMembersModal({
     try {
       await onInvite(email.trim());
       setEmail('');
-      toast.success('Приглашение отправлено');
+      toast.success('Пользователь приглашён!');
     } catch (error) {
-      toast.error('Не удалось пригласить пользователя');
+      const message = error instanceof Error ? error.message : 'Не удалось пригласить пользователя';
+      toast.error(message);
     } finally {
       setLoading(false);
     }
   };
 
-const handleUpdateRole = async (memberId: string, role: 'owner' | 'member') => {
-  setUpdating(memberId);
-  try {
-    await onUpdateRole(memberId, role);
-    toast.success('Роль обновлена');
-  } catch (error) {
-    toast.error('Не удалось обновить роль');
-  } finally {
-    setUpdating(null);
-  }
-};
+  const handleUpdateRole = async (memberId: string, role: BoardRole) => {
+    setUpdating(memberId);
+    try {
+      await onUpdateRole(memberId, role);
+      toast.success('Роль обновлена');
+    } catch (error) {
+      toast.error('Не удалось обновить роль');
+    } finally {
+      setUpdating(null);
+    }
+  };
 
   const handleRemove = async (memberId: string) => {
     if (!confirm('Удалить участника?')) return;
@@ -94,6 +95,7 @@ const handleUpdateRole = async (memberId: string, role: 'owner' | 'member') => {
             const isCurrentUser = member.user_id === currentUserId;
             const profile = member.profile;
             const displayName = profile?.name || 'User';
+
             return (
               <div
                 key={member.id}

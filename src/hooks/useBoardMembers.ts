@@ -17,23 +17,29 @@ export function useBoardMembers(boardId: string | undefined) {
         throw new Error('Введите email');
       }
 
-      // 1. Ищем пользователя в profiles
+      
       const { data: profiles, error: profileError } = await supabase
         .from('profiles')
         .select('id, name')
         .eq('name', email.trim());
 
       if (profileError) {
+        console.error('Ошибка поиска:', profileError);
         throw new Error('Ошибка поиска пользователя');
       }
 
+    
       if (!profiles || profiles.length === 0) {
         throw new Error('Пользователь с таким email не найден. Убедитесь, что он зарегистрирован.');
       }
 
       const user = profiles[0];
 
-      // 2. Проверяем, не добавлен ли уже
+      if (!user || !user.id) {
+        throw new Error('Не удалось определить ID пользователя');
+      }
+
+   
       const { data: existing, error: checkError } = await supabase
         .from('board_members')
         .select('id')
@@ -41,23 +47,34 @@ export function useBoardMembers(boardId: string | undefined) {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (checkError) throw checkError;
-      if (existing) throw new Error('Пользователь уже является участником');
+      if (checkError) {
+        console.error('Ошибка проверки участника:', checkError);
+        throw new Error('Ошибка проверки прав доступа');
+      }
 
-      // 3. Добавляем
+      if (existing) {
+        throw new Error('Пользователь уже является участником');
+      }
+
+      
       const { data, error } = await supabase
         .from('board_members')
         .insert({ board_id: boardId, user_id: user.id, role: 'member' })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Ошибка добавления участника:', error);
+        throw new Error('Не удалось добавить участника');
+      }
+
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['boardMembers', boardId] });
     },
     onError: (error: Error) => {
+      
       console.error('Ошибка приглашения:', error.message);
     },
   });
