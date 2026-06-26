@@ -3,24 +3,41 @@ import type { Board } from '@/types';
 
 export const boardService = {
   getBoards: async (userId: string): Promise<Board[]> => {
-    // 1. Получаем все доски, где пользователь участник
+    console.log('1. getBoards вызван для userId:', userId);
+    
+    // Получаем все доски, где пользователь участник
     const { data: members, error: membersError } = await supabase
       .from('board_members')
       .select('board_id')
       .eq('user_id', userId);
     
-    if (membersError) throw membersError;
-    if (!members || members.length === 0) return [];
+    if (membersError) {
+      console.error('Ошибка загрузки участников:', membersError);
+      throw membersError;
+    }
+    
+    console.log('2. Найдено участников:', members?.length || 0);
+    
+    if (!members || members.length === 0) {
+      console.log('3. Пользователь не состоит ни в одной доске');
+      return [];
+    }
 
     const boardIds = members.map((m: { board_id: string }) => m.board_id);
+    console.log('4. ID досок:', boardIds);
 
-    // 2. Получаем данные досок
+    // Получаем данные досок
     const { data: boards, error: boardsError } = await supabase
       .from('boards')
       .select('*')
       .in('id', boardIds);
     
-    if (boardsError) throw boardsError;
+    if (boardsError) {
+      console.error('Ошибка загрузки досок:', boardsError);
+      throw boardsError;
+    }
+    
+    console.log('5. Загружено досок:', boards?.length || 0);
     return boards || [];
   },
 
@@ -49,7 +66,7 @@ export const boardService = {
       .insert({ board_id: board.id, user_id: userId, role: 'owner' });
     if (memberError) throw memberError;
 
-    // 3. Создаём 3 колонки по умолчанию
+    // 3. Создаём 3 колонки
     const defaultColumns = ['To Do', 'In Progress', 'Done'];
     for (let i = 0; i < defaultColumns.length; i++) {
       const { error: columnError } = await supabase

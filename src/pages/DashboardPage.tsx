@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoards } from '@/hooks/useBoards';
@@ -14,6 +14,12 @@ export function DashboardPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [name, setName] = useState('');
 
+  // Логируем для отладки
+  useEffect(() => {
+    console.log('DashboardPage: user=', user?.id);
+    console.log('DashboardPage: boards=', boards);
+  }, [user, boards]);
+
   const handleCreate = async () => {
     if (!name.trim()) return toast.error('Введите название');
     try {
@@ -21,7 +27,8 @@ export function DashboardPage() {
       setName('');
       setIsCreating(false);
       toast.success('Доска создана');
-    } catch {
+    } catch (error) {
+      console.error('Ошибка создания:', error);
       toast.error('Не удалось создать доску');
     }
   };
@@ -30,7 +37,9 @@ export function DashboardPage() {
     return (
       <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-slate-900">
         <Header />
-        <div className="flex flex-1 items-center justify-center"><Spinner size="lg" /></div>
+        <div className="flex flex-1 items-center justify-center">
+          <Spinner size="lg" />
+        </div>
       </div>
     );
   }
@@ -41,39 +50,70 @@ export function DashboardPage() {
       <main className="flex-1 p-6">
         <div className="mx-auto max-w-4xl">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Мои доски</h1>
-            <Button onClick={() => setIsCreating(true)}>Создать доску</Button>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+              Мои доски
+            </h1>
+            <Button onClick={() => setIsCreating(true)}>
+              Создать доску
+            </Button>
           </div>
+
           {isCreating && (
             <div className="mb-6 flex gap-2">
-              <input 
-                type="text" 
-                value={name} 
-                onChange={(e) => setName(e.target.value)} 
-                placeholder="Название доски" 
-                className="flex-1 rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-white" 
-                autoFocus 
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Название доски"
+                className="flex-1 rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                autoFocus
               />
               <Button onClick={handleCreate}>Сохранить</Button>
-              <Button variant="ghost" onClick={() => { setIsCreating(false); setName(''); }}>Отмена</Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setIsCreating(false);
+                  setName('');
+                }}
+              >
+                Отмена
+              </Button>
             </div>
           )}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {boards.map((board: Board) => (
-              <div key={board.id} className="group relative rounded-xl bg-white p-4 shadow-sm hover:shadow-md dark:bg-slate-800">
-                <Link to={`/board/${board.id}`} className="block">
-                  <h3 className="font-medium text-slate-900 dark:text-white">{board.name}</h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Создана: {new Date(board.created_at).toLocaleDateString()}</p>
-                </Link>
-                <button 
-                  onClick={() => { if (confirm('Удалить доску?')) deleteBoard(board.id); }} 
-                  className="absolute right-2 top-2 text-slate-400 opacity-0 transition group-hover:opacity-100 hover:text-red-500"
+
+          {boards.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-slate-500 dark:text-slate-400">
+                У вас пока нет досок. Создайте первую!
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {boards.map((board: Board) => (
+                <div
+                  key={board.id}
+                  className="group relative rounded-xl bg-white p-4 shadow-sm hover:shadow-md dark:bg-slate-800"
                 >
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
+                  <Link to={`/board/${board.id}`} className="block">
+                    <h3 className="font-medium text-slate-900 dark:text-white">
+                      {board.name}
+                    </h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      Создана: {new Date(board.created_at).toLocaleDateString()}
+                    </p>
+                  </Link>
+                  <button
+                    onClick={() => {
+                      if (confirm('Удалить доску?')) deleteBoard(board.id);
+                    }}
+                    className="absolute right-2 top-2 text-slate-400 opacity-0 transition group-hover:opacity-100 hover:text-red-500"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>
