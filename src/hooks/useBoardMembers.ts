@@ -17,26 +17,27 @@ export function useBoardMembers(boardId: string | undefined) {
         throw new Error('Введите email');
       }
 
-      const { data: profiles, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, name')
-        .eq('name', email.trim());
+      // Ищем пользователя по email через RPC функцию
+      const { data: userData, error: userError } = await supabase
+        .rpc('find_user_by_email', { user_email: email.trim() });
 
-      if (profileError) {
+      if (userError) {
+        console.error('RPC error:', userError);
         throw new Error('Ошибка поиска пользователя');
       }
 
-      if (!profiles || profiles.length === 0) {
-        throw new Error('Пользователь с таким email не найден');
+      if (!userData || userData.length === 0) {
+        throw new Error('Пользователь с таким email не найден. Убедитесь, что он зарегистрирован.');
       }
 
-      const user = profiles[0];
+      const user = userData[0];
+      const userId = user.user_id;
 
       const { data: existing, error: checkError } = await supabase
         .from('board_members')
         .select('id')
         .eq('board_id', boardId)
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .maybeSingle();
 
       if (checkError) {
@@ -49,7 +50,7 @@ export function useBoardMembers(boardId: string | undefined) {
 
       const { data, error } = await supabase
         .from('board_members')
-        .insert({ board_id: boardId, user_id: user.id, role: 'member' })
+        .insert({ board_id: boardId, user_id: userId, role: 'member' })
         .select()
         .single();
 
