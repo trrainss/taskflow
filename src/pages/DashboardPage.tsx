@@ -13,12 +13,15 @@ export function DashboardPage() {
   const { boards, isLoading, createBoard, deleteBoard } = useBoards(user?.id);
   const [isCreating, setIsCreating] = useState(false);
   const [name, setName] = useState('');
+  const [forceUpdate, setForceUpdate] = useState(0);
 
-  // Логируем для отладки
+  // Принудительное обновление
   useEffect(() => {
-    console.log('DashboardPage: user=', user?.id);
-    console.log('DashboardPage: boards=', boards);
-  }, [user, boards]);
+    if (boards.length > 0) {
+      console.log('✅ Доски загружены:', boards);
+      setForceUpdate(prev => prev + 1);
+    }
+  }, [boards]);
 
   const handleCreate = async () => {
     if (!name.trim()) return toast.error('Введите название');
@@ -27,6 +30,7 @@ export function DashboardPage() {
       setName('');
       setIsCreating(false);
       toast.success('Доска создана');
+      window.location.reload(); // принудительная перезагрузка
     } catch (error) {
       console.error('Ошибка создания:', error);
       toast.error('Не удалось создать доску');
@@ -44,9 +48,6 @@ export function DashboardPage() {
     );
   }
 
-console.log('🔍 boards в DashboardPage:', boards);
-console.log('🔍 isLoading:', isLoading);
-console.log('🔍 user?.id:', user?.id);
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-slate-900">
       <Header />
@@ -54,7 +55,7 @@ console.log('🔍 user?.id:', user?.id);
         <div className="mx-auto max-w-4xl">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-              Мои доски
+              Мои доски ({boards.length})
             </h1>
             <Button onClick={() => setIsCreating(true)}>
               Создать доску
