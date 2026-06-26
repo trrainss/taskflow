@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/services/supabaseClient';
 
+
 export function useProfiles(userIds: string[]) {
-  const { data: profiles = [], isLoading } = useQuery({
+  const { data: profiles = [] } = useQuery({
     queryKey: ['profiles', userIds],
     queryFn: async () => {
       if (!userIds.length) return [];
@@ -18,5 +19,5 @@ export function useProfiles(userIds: string[]) {
 
   const profilesById = new Map(profiles.map((p) => [p.id, p]));
 
-  return { profiles, profilesById, isLoading };
+  return { profiles, profilesById };
 }

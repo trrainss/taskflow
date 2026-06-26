@@ -13,38 +13,57 @@ export function useBoardMembers(boardId: string | undefined) {
 
   const add = useMutation({
     mutationFn: async (email: string) => {
-      // 1. Найти пользователя по email
-      const { data: users, error: userError } = await supabase
-        .from('profiles')
-        .select('id, name')
-        .ilike('name', email.trim());
+      if (!email || !email.trim()) {
+        throw new Error('Введите email');
+      }
 
-      if (userError) throw new Error('Ошибка поиска пользователя');
+      // 1. Ищем пользователя в auth.users через RPC функцию
+      // или используем прямой запрос к auth.users (если есть права)
+      const { data: users, error: userError } = await supabase
+        .rpc('find_user_by_email', { user_email: email.trim() });
+
+      if (userError) {
+        console.error('Ошибка поиска:', userError);
+        throw new Error('Ошибка поиска пользователя');
+      }
+
       if (!users || users.length === 0) {
-        throw new Error('Пользователь с таким email не найден');
+        throw new Error('Пользователь с таким email не найден. Убедитесь, что пользователь зарегистрирован.');
       }
 
       const user = users[0];
+      
+      if (!user || !user.user_id) {
+        throw new Error('Не удалось определить ID пользователя');
+      }
 
-      // 2. Проверить, не добавлен ли уже
+      // 2. Проверяем, не добавлен ли уже
       const { data: existing, error: checkError } = await supabase
         .from('board_members')
         .select('id')
         .eq('board_id', boardId)
-        .eq('user_id', user.id)
+        .eq('user_id', user.user_id)
         .maybeSingle();
 
-      if (checkError) throw checkError;
+      if (checkError) {
+        console.error('Ошибка проверки участника:', checkError);
+        throw new Error('Ошибка проверки прав доступа');
+      }
+      
       if (existing) throw new Error('Пользователь уже является участником');
 
-      // 3. Добавить в board_members
+      // 3. Добавляем в board_members
       const { data, error } = await supabase
         .from('board_members')
-        .insert({ board_id: boardId, user_id: user.id, role: 'member' })
+        .insert({ board_id: boardId, user_id: user.user_id, role: 'member' })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Ошибка добавления участника:', error);
+        throw new Error('Не удалось добавить участника');
+      }
+      
       return data;
     },
     onSuccess: () => {

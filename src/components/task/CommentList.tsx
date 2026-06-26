@@ -4,6 +4,7 @@ import { useComments } from '@/hooks/useComments';
 import { Avatar } from '@/components/shared/Avatar';
 import { Button } from '@/components/shared/Button';
 import { formatDate } from '@/utils/helpers';
+import { useProfiles } from '@/hooks/useProfiles';
 import toast from 'react-hot-toast';
 
 interface CommentListProps {
@@ -15,6 +16,10 @@ export function CommentList({ taskId }: CommentListProps) {
   const { comments, isLoading, addComment, deleteComment } = useComments(taskId);
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Загружаем профили для авторов комментариев
+  const userIds = comments.map(c => c.user_id).filter(id => id !== user?.id);
+  const { profilesById } = useProfiles(userIds);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,7 +81,7 @@ export function CommentList({ taskId }: CommentListProps) {
         ) : (
           comments.map((comment) => {
             const isOwner = comment.user_id === user?.id;
-            const profile = (comment as any).profile;
+            const profile = profilesById.get(comment.user_id);
             const authorName = profile?.name || comment.user_id || 'User';
             const authorAvatar = profile?.avatar_url || null;
 
