@@ -13,7 +13,7 @@ function App() {
   return (
     <ThemeProvider>
       <ToastProvider>
-        <AuthProvider>  {/* ← AuthProvider должен быть здесь! */}
+        <AuthProvider>
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
