@@ -13,14 +13,11 @@ export function DashboardPage() {
   const { boards, isLoading, createBoard, deleteBoard } = useBoards(user?.id);
   const [isCreating, setIsCreating] = useState(false);
   const [name, setName] = useState('');
-  const [forceUpdate, setForceUpdate] = useState(0);
 
-  // Принудительное обновление
+  // Логи для отладки
   useEffect(() => {
-    if (boards.length > 0) {
-      console.log('✅ Доски загружены:', boards);
-      setForceUpdate(prev => prev + 1);
-    }
+    console.log('📋 ДОСКИ В DASHBOARD:', boards);
+    console.log('📋 КОЛИЧЕСТВО:', boards.length);
   }, [boards]);
 
   const handleCreate = async () => {
@@ -30,7 +27,6 @@ export function DashboardPage() {
       setName('');
       setIsCreating(false);
       toast.success('Доска создана');
-      window.location.reload(); // принудительная перезагрузка
     } catch (error) {
       console.error('Ошибка создания:', error);
       toast.error('Не удалось создать доску');
