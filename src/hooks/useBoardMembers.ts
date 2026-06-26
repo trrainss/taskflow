@@ -17,7 +17,6 @@ export function useBoardMembers(boardId: string | undefined) {
         throw new Error('Введите email');
       }
 
-      // ✅ 1. Ищем ТОЛЬКО в profiles (существующие пользователи)
       const { data: profiles, error: profileError } = await supabase
         .from('profiles')
         .select('id, name')
@@ -27,14 +26,12 @@ export function useBoardMembers(boardId: string | undefined) {
         throw new Error('Ошибка поиска пользователя');
       }
 
-      // ✅ 2. Если не нашли — пользователь НЕ СУЩЕСТВУЕТ
       if (!profiles || profiles.length === 0) {
-        throw new Error('Пользователь с таким email не найден. Убедитесь, что он зарегистрирован.');
+        throw new Error('Пользователь с таким email не найден');
       }
 
       const user = profiles[0];
 
-      // ✅ 3. Проверяем, не добавлен ли уже
       const { data: existing, error: checkError } = await supabase
         .from('board_members')
         .select('id')
@@ -50,7 +47,6 @@ export function useBoardMembers(boardId: string | undefined) {
         throw new Error('Пользователь уже является участником');
       }
 
-      // ✅ 4. Добавляем в board_members
       const { data, error } = await supabase
         .from('board_members')
         .insert({ board_id: boardId, user_id: user.id, role: 'member' })
