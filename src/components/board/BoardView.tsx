@@ -72,31 +72,52 @@ export function BoardView({
 
     if (!columns.some((c) => c.id === targetColumnId)) return;
 
-    const sourceColumnTasks = tasksByColumn(activeTaskItem.column_id).filter(
+    // Получаем задачи исходной колонки (без перетаскиваемой)
+    const sourceTasks = tasksByColumn(activeTaskItem.column_id).filter(
       (t) => t.id !== activeTaskItem.id,
     );
-    const targetColumnTasks =
-      targetColumnId === activeTaskItem.column_id
-        ? sourceColumnTasks
-        : tasksByColumn(targetColumnId);
+    
+    // Получаем задачи целевой колонки
+    const targetTasks = targetColumnId === activeTaskItem.column_id
+      ? sourceTasks
+      : tasksByColumn(targetColumnId);
 
-    let insertIndex = targetColumnTasks.length;
+    // Определяем позицию вставки
+    let insertIndex = targetTasks.length;
     if (overData?.type === 'task') {
-      const overIndex = targetColumnTasks.findIndex((t) => t.id === over.id);
+      const overIndex = targetTasks.findIndex((t) => t.id === over.id);
       if (overIndex !== -1) insertIndex = overIndex;
     }
 
-    const newTargetList = [...targetColumnTasks];
+    // Создаём новый список для целевой колонки
+    const newTargetList = [...targetTasks];
     newTargetList.splice(insertIndex, 0, activeTaskItem);
 
-    const updates = newTargetList.map((task, index) => ({
-      id: task.id,
-      position: index,
-      column_id: targetColumnId,
-    }));
+    
+    const allUpdates: Array<{ id: string; position: number; column_id: string }> = [];
+
+    // 1. Обновляем позиции в ИСХОДНОЙ колонке (если она не целевая)
+    if (targetColumnId !== activeTaskItem.column_id) {
+      sourceTasks.forEach((task, index) => {
+        allUpdates.push({
+          id: task.id,
+          position: index,
+          column_id: activeTaskItem.column_id,
+        });
+      });
+    }
+
+    // 2. Обновляем позиции в ЦЕЛЕВОЙ колонке
+    newTargetList.forEach((task, index) => {
+      allUpdates.push({
+        id: task.id,
+        position: index,
+        column_id: targetColumnId,
+      });
+    });
 
     try {
-      onReorderTasks(updates);
+      onReorderTasks(allUpdates);
     } catch (error) {
       notifyError(error, 'Не удалось переместить задачу');
     }

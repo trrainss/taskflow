@@ -106,7 +106,7 @@ export function TaskDetails({ task, members, onUpdate, onClose }: TaskDetailsPro
           <option value="">Не назначен</option>
           {members.map((member) => {
             const profile = member.profile;
-            const name = profile?.display_name || profile?.name || 'User';
+            const name = profile?.name || 'User';
             return (
               <option key={member.id} value={member.user_id}>
                 {name}

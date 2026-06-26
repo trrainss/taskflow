@@ -93,8 +93,7 @@ const handleUpdateRole = async (memberId: string, role: 'owner' | 'member') => {
           {members.map((member) => {
             const isCurrentUser = member.user_id === currentUserId;
             const profile = member.profile;
-            const displayName = profile?.display_name || profile?.name || 'User';
-
+            const displayName = profile?.name || 'User';
             return (
               <div
                 key={member.id}

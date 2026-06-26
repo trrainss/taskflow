@@ -46,9 +46,8 @@ export function BoardPage() {
   
   const { members, isLoading: membersLoading, addMember, updateMemberRole, removeMember } = useBoardMembers(boardId);
 
-  // 👇 ПРАВИЛЬНАЯ ПРОВЕРКА ПРАВ
   const currentMember = members.find((m) => m.user_id === user?.id);
-  const canManage = currentMember?.role === 'owner' || true; // если нет участников - даём права
+  const canManage = currentMember?.role === 'owner';
 
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
@@ -156,7 +155,7 @@ export function BoardPage() {
 
       <div className="flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-6 py-3 dark:border-slate-700 dark:bg-slate-800">
         <h1 className="truncate text-lg font-semibold text-slate-900 dark:text-white">
-          {boardQuery.data?.title ?? 'Загрузка...'}
+          {boardQuery.data?.name ?? 'Загрузка...'}  {}
         </h1>
         <div className="flex items-center gap-3">
           <TaskFiltersBar filters={filters} members={members} onChange={setFilters} />

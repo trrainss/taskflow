@@ -66,12 +66,12 @@ export function TaskCard({ task, assignee, onClick }: TaskCardProps) {
         {assignee ? (
           <div className="flex items-center gap-1.5">
             <Avatar
-              name={assignee.display_name || assignee.name || 'User'}
+              name={assignee.name || 'User'}
               avatarUrl={assignee.avatar_url}
               size="xs"
             />
             <span className="text-xs text-slate-600 dark:text-slate-300">
-              {assignee.display_name || assignee.name}
+              {assignee.name || 'User'}
             </span>
           </div>
         ) : (

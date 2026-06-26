@@ -5,7 +5,14 @@ export const commentService = {
   async getComments(taskId: string): Promise<Comment[]> {
     const { data, error } = await supabase
       .from('comments')
-      .select('*')
+      .select(`
+        *,
+        profile:profiles!comments_user_id_fkey (
+          id,
+          name,
+          avatar_url
+        )
+      `)
       .eq('task_id', taskId)
       .order('created_at', { ascending: true });
     if (error) throw error;
@@ -16,7 +23,14 @@ export const commentService = {
     const { data, error } = await supabase
       .from('comments')
       .insert({ task_id: taskId, user_id: userId, content })
-      .select()
+      .select(`
+        *,
+        profile:profiles!comments_user_id_fkey (
+          id,
+          name,
+          avatar_url
+        )
+      `)
       .single();
     if (error) throw error;
     return data;
@@ -31,7 +45,6 @@ export const commentService = {
   },
 };
 
-// 👇 ЭКСПОРТЫ ДЛЯ ОТДЕЛЬНЫХ ФУНКЦИЙ
 export const getComments = commentService.getComments;
 export const addComment = commentService.addComment;
 export const deleteComment = commentService.deleteComment;

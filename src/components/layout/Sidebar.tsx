@@ -23,7 +23,7 @@ export function Sidebar({ boards, currentBoardId }: SidebarProps) {
                 : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700'
             }`}
           >
-            {board.title}
+            {board.name}
           </Link>
         ))}
       </nav>

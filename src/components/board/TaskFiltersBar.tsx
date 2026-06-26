@@ -36,7 +36,7 @@ export function TaskFiltersBar({ filters, members, onChange }: TaskFiltersBarPro
         <option value="all">Все исполнители</option>
         {members.map((member) => {
           const profile = member.profile;
-          const name = profile?.display_name || profile?.name || 'User';
+          const name = profile?.name || 'User';
           return (
             <option key={member.id} value={member.user_id}>
               {name}

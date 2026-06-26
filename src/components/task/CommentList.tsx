@@ -65,7 +65,7 @@ export function CommentList({ taskId }: CommentListProps) {
           className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-white"
           disabled={loading}
         />
-        <Button type="submit" size="sm" disabled={loading}>
+        <Button type="submit" disabled={loading}>
           {loading ? '...' : 'Отправить'}
         </Button>
       </form>
@@ -76,19 +76,24 @@ export function CommentList({ taskId }: CommentListProps) {
         ) : (
           comments.map((comment) => {
             const isOwner = comment.user_id === user?.id;
+            const profile = (comment as any).profile;
+            const authorName = profile?.name || comment.user_id || 'User';
+            const authorAvatar = profile?.avatar_url || null;
+
             return (
               <div
                 key={comment.id}
                 className="flex gap-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-800"
               >
                 <Avatar
-                  name={comment.user_id || 'User'}
+                  name={authorName}
+                  avatarUrl={authorAvatar}
                   size="sm"
                 />
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium text-slate-900 dark:text-white">
-                      {comment.user_id}
+                      {authorName}
                     </p>
                     <span className="text-xs text-slate-500">
                       {formatDate(comment.created_at)}

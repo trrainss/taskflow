@@ -11,7 +11,7 @@ export function useBoards(userId: string | undefined) {
   });
 
   const create = useMutation({
-    mutationFn: (title: string) => boardService.createBoard(title, userId as string),
+    mutationFn: (name: string) => boardService.createBoard(name, userId as string), // ✅ было title, стало name
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['boards', userId] }),
   });
 

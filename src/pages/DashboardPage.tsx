@@ -11,13 +11,13 @@ export function DashboardPage() {
   const { user } = useAuth();
   const { boards, isLoading, createBoard, deleteBoard } = useBoards(user?.id);
   const [isCreating, setIsCreating] = useState(false);
-  const [title, setTitle] = useState('');
+  const [name, setName] = useState('');  
 
   const handleCreate = async () => {
-    if (!title.trim()) return toast.error('Введите название');
+    if (!name.trim()) return toast.error('Введите название');
     try {
-      await createBoard(title.trim());
-      setTitle('');
+      await createBoard(name.trim());
+      setName('');
       setIsCreating(false);
       toast.success('Доска создана');
     } catch {
@@ -45,19 +45,31 @@ export function DashboardPage() {
           </div>
           {isCreating && (
             <div className="mb-6 flex gap-2">
-              <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Название доски" className="flex-1 rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-white" autoFocus />
+              <input 
+                type="text" 
+                value={name} 
+                onChange={(e) => setName(e.target.value)} 
+                placeholder="Название доски" 
+                className="flex-1 rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-white" 
+                autoFocus 
+              />
               <Button onClick={handleCreate}>Сохранить</Button>
-              <Button variant="ghost" onClick={() => { setIsCreating(false); setTitle(''); }}>Отмена</Button>
+              <Button variant="ghost" onClick={() => { setIsCreating(false); setName(''); }}>Отмена</Button>
             </div>
           )}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {boards.map((board) => (
               <div key={board.id} className="group relative rounded-xl bg-white p-4 shadow-sm hover:shadow-md dark:bg-slate-800">
                 <Link to={`/board/${board.id}`} className="block">
-                  <h3 className="font-medium text-slate-900 dark:text-white">{board.title}</h3>
+                  <h3 className="font-medium text-slate-900 dark:text-white">{board.name}</h3>  {}
                   <p className="text-sm text-slate-500 dark:text-slate-400">Создана: {new Date(board.created_at).toLocaleDateString()}</p>
                 </Link>
-                <button onClick={() => { if (confirm('Удалить доску?')) deleteBoard(board.id); }} className="absolute right-2 top-2 text-slate-400 opacity-0 transition group-hover:opacity-100 hover:text-red-500">✕</button>
+                <button 
+                  onClick={() => { if (confirm('Удалить доску?')) deleteBoard(board.id); }} 
+                  className="absolute right-2 top-2 text-slate-400 opacity-0 transition group-hover:opacity-100 hover:text-red-500"
+                >
+                  ✕
+                </button>
               </div>
             ))}
           </div>

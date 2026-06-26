@@ -4,9 +4,7 @@
 
 export interface Board {
   id: string;
-  title: string;
-  name?: string;
-  owner_id: string;
+  name: string;           
   created_at: string;
 }
 
@@ -38,14 +36,13 @@ export interface Comment {
   id: string;
   task_id: string;
   user_id: string;
-  content: string;
+  content: string;        
   created_at: string;
 }
 
 export interface Profile {
   id: string;
-  name: string;
-  display_name?: string;
+  name: string;           
   avatar_url: string | null;
   updated_at: string;
 }

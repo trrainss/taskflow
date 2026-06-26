@@ -14,7 +14,7 @@ export function BoardList({ boards }: BoardListProps) {
           to={`/board/${board.id}`}
           className="group rounded-xl bg-white p-4 shadow-sm transition hover:shadow-md dark:bg-slate-800"
         >
-          <h3 className="font-medium text-slate-900 dark:text-white">{board.title}</h3>
+          <h3 className="font-medium text-slate-900 dark:text-white">{board.name}</h3>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             {board.role === 'owner' ? 'Владелец' : 'Участник'}
           </p>
