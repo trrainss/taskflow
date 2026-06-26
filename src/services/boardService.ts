@@ -3,12 +3,25 @@ import type { Board } from '@/types';
 
 export const boardService = {
   getBoards: async (userId: string): Promise<Board[]> => {
-    const { data, error } = await supabase
+    // 1. Получаем все доски, где пользователь участник
+    const { data: members, error: membersError } = await supabase
+      .from('board_members')
+      .select('board_id')
+      .eq('user_id', userId);
+    
+    if (membersError) throw membersError;
+    if (!members || members.length === 0) return [];
+
+    const boardIds = members.map((m: { board_id: string }) => m.board_id);
+
+    // 2. Получаем данные досок
+    const { data: boards, error: boardsError } = await supabase
       .from('boards')
       .select('*')
-      .eq('owner_id', userId);
-    if (error) throw error;
-    return data || [];
+      .in('id', boardIds);
+    
+    if (boardsError) throw boardsError;
+    return boards || [];
   },
 
   getBoard: async (boardId: string): Promise<Board | null> => {

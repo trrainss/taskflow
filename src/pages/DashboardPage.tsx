@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoards } from '@/hooks/useBoards';
+import type { Board } from '@/types';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/shared/Button';
 import { Spinner } from '@/components/shared/Spinner';
@@ -11,7 +12,7 @@ export function DashboardPage() {
   const { user } = useAuth();
   const { boards, isLoading, createBoard, deleteBoard } = useBoards(user?.id);
   const [isCreating, setIsCreating] = useState(false);
-  const [name, setName] = useState('');  
+  const [name, setName] = useState('');
 
   const handleCreate = async () => {
     if (!name.trim()) return toast.error('Введите название');
@@ -58,10 +59,10 @@ export function DashboardPage() {
             </div>
           )}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {boards.map((board) => (
+            {boards.map((board: Board) => (
               <div key={board.id} className="group relative rounded-xl bg-white p-4 shadow-sm hover:shadow-md dark:bg-slate-800">
                 <Link to={`/board/${board.id}`} className="block">
-                  <h3 className="font-medium text-slate-900 dark:text-white">{board.name}</h3>  {}
+                  <h3 className="font-medium text-slate-900 dark:text-white">{board.name}</h3>
                   <p className="text-sm text-slate-500 dark:text-slate-400">Создана: {new Date(board.created_at).toLocaleDateString()}</p>
                 </Link>
                 <button 
