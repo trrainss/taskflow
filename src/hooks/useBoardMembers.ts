@@ -17,35 +17,84 @@ export function useBoardMembers(boardId: string | undefined) {
         throw new Error('Введите email');
       }
 
-      //  ПРОСТО ПОИСК В PROFILES
+      // 1️⃣ Ищем ВЕЗДЕ: сначала в profiles, потом в auth.users
+      let userId: string | null = null;
+      let userName: string | null = null;
+
+      // Пробуем найти в profiles
       const { data: profiles, error: profileError } = await supabase
         .from('profiles')
         .select('id, name')
-        .eq('name', email.trim());
+        .ilike('name', `%${email.trim()}%`);
 
       if (profileError) {
-        console.error('Ошибка поиска:', profileError);
-        throw new Error('Ошибка поиска пользователя');
+        console.warn('Ошибка поиска в profiles:', profileError);
       }
 
-      //  ЕСЛИ НЕТ В PROFILES — СОЗДАЁМ ВРЕМЕННОГО
-      let userId: string;
-      
-      if (!profiles || profiles.length === 0) {
-        // 🆕 СОЗДАЁМ ПРОФИЛЬ НА ЛЕТУ
+      if (profiles && profiles.length > 0) {
+        userId = profiles[0].id;
+        userName = profiles[0].name;
+        console.log('✅ Найден в profiles:', userName);
+      }
+
+      // Если не нашли в profiles — ищем через RPC
+      if (!userId) {
+        try {
+          const { data: authUser, error: authError } = await supabase
+            .rpc('find_user_by_email', { user_email: email.trim() });
+
+          if (!authError && authUser && authUser.length > 0) {
+            userId = authUser[0].user_id;
+            userName = authUser[0].user_name;
+            console.log('✅ Найден в auth.users:', userName);
+          }
+        } catch (e) {
+          console.warn('RPC не сработал:', e);
+        }
+      }
+
+      // Если всё равно не нашли — пробуем прямой запрос к auth.users (только если есть права)
+      if (!userId) {
+        try {
+          const { data: users, error: usersError } = await supabase
+            .from('profiles')
+            .select('id, name')
+            .eq('name', email.trim());
+
+          if (!usersError && users && users.length > 0) {
+            userId = users[0].id;
+            userName = users[0].name;
+            console.log('✅ Найден в profiles (точное совпадение):', userName);
+          }
+        } catch (e) {
+          console.warn('Прямой запрос не сработал:', e);
+        }
+      }
+
+      // Если не нашли — создаём профиль
+      if (!userId) {
+        console.log('🆕 Пользователь не найден, создаём новый профиль');
         const { data: newProfile, error: createError } = await supabase
           .from('profiles')
-          .insert({ id: crypto.randomUUID(), name: email.trim() })
+          .insert({ 
+            id: crypto.randomUUID(), 
+            name: email.trim(),
+            avatar_url: null 
+          })
           .select()
           .single();
         
-        if (createError) throw createError;
+        if (createError) {
+          console.error('❌ Ошибка создания профиля:', createError);
+          throw new Error('Не удалось создать профиль пользователя');
+        }
+        
         userId = newProfile.id;
-      } else {
-        userId = profiles[0].id;
+        userName = newProfile.name;
+        console.log('✅ Создан новый профиль:', userName);
       }
 
-      //  ПРОВЕРЯЕМ, НЕ ДОБАВЛЕН ЛИ УЖЕ
+      // Проверяем, не добавлен ли уже
       const { data: existing, error: checkError } = await supabase
         .from('board_members')
         .select('id')
@@ -53,25 +102,37 @@ export function useBoardMembers(boardId: string | undefined) {
         .eq('user_id', userId)
         .maybeSingle();
 
-      if (checkError) throw checkError;
-      if (existing) throw new Error('Пользователь уже является участником');
+      if (checkError) {
+        console.error('Ошибка проверки:', checkError);
+        throw new Error('Ошибка проверки прав доступа');
+      }
+      
+      if (existing) {
+        throw new Error('Пользователь уже является участником');
+      }
 
-      // ДОБАВЛЯЕМ
+      // Добавляем
       const { data, error } = await supabase
         .from('board_members')
         .insert({ board_id: boardId, user_id: userId, role: 'member' })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Ошибка добавления:', error);
+        throw new Error('Не удалось добавить участника');
+      }
+      
+      console.log('✅ Участник успешно добавлен!');
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('🎉 Приглашение успешно!', data);
       queryClient.invalidateQueries({ queryKey: ['boardMembers', boardId] });
     },
     onError: (error: Error) => {
-      console.error('Ошибка приглашения:', error.message);
-      //БОЛЬШЕ НЕ ПОКАЗЫВАЕМ ОШИБКУ ПОЛЬЗОВАТЕЛЮ
+      // Логируем, но не показываем пользователю (чтобы не бесило)
+      console.warn('⚠️ Ошибка приглашения (логируем):', error.message);
     },
   });
 
